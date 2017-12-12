@@ -1,5 +1,7 @@
 flickr_keys.py
 oauth-tokens.sqlite
+exiftool
+exiftool.exe
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

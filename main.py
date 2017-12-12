@@ -21,7 +21,7 @@ import dateutil.parser as dateparser
 
 
           
-class Publicator:  
+class PhotohostingsModel:  
 
     def _get_if_exist(self, data, key):
         if key in data:
@@ -46,11 +46,17 @@ class Publicator:
         self.search_at_flickr(photos)
                     
     def cycle_files(self,photos):
-        self.search_at_flickr(photos)
+        for photo in photos:
+            result=dict()
+            data=list()
+            data.append(photo)
+            result['flickr'] = self.search_at_flickr(data)
+            
+            print str(photo).ljust(50),str(result['flickr']).ljust(3)
     
     def search_at_flickr(self,photos):
         for photo in photos:
-            exiftool.executable ='exiftool.exe'
+            exiftool.executable ='exiftool'
             with exiftool.ExifTool() as et:
                 metadata = et.get_metadata(photo)
                 datetimestring = self.get_photo_timestamp(metadata)
@@ -67,7 +73,8 @@ class Publicator:
         
                 flickr_instance = flickr()
                 flickr_state = flickr_instance.search_flickr(timestamp)
-                print str(photo).ljust(50),str(flickr_state).ljust(3)
+                return flickr_state
+                #print str(photo).ljust(50),str(flickr_state).ljust(3)
         
         
 if __name__ == "__main__":        
@@ -85,9 +92,9 @@ if __name__ == "__main__":
      
 
      
-processor = publicator.Publicator()
+model = PhotohostingsModel()
 
-processor.cycle_files(files)
+model.cycle_files(files)
 
 raw_input('press any key')
 quit()
