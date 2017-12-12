@@ -13,6 +13,7 @@ import shutil
 import exiftool
 
 from flickr import flickr
+from mapillary import mapillary
 
 import time 
 import dateutil.parser as dateparser
@@ -46,35 +47,54 @@ class PhotohostingsModel:
         self.search_at_flickr(photos)
                     
     def cycle_files(self,photos):
+        print 'FILENAME'.ljust(30),str('flickr').ljust(10),str('mapillary').ljust(10)
         for photo in photos:
             result=dict()
-            data=list()
-            data.append(photo)
-            result['flickr'] = self.search_at_flickr(data)
+            result['flickr'] = self.search_at_flickr(photo)
+            result['mapillary'] = self.search_at_mapillary(photo)
             
-            print str(photo).ljust(50),str(result['flickr']).ljust(3)
+            print os.path.basename(str(photo)).ljust(30),str(result['flickr']).ljust(10),str(result['mapillary']).ljust(10)
     
-    def search_at_flickr(self,photos):
-        for photo in photos:
-            exiftool.executable ='exiftool'
-            with exiftool.ExifTool() as et:
-                metadata = et.get_metadata(photo)
-                datetimestring = self.get_photo_timestamp(metadata)
-                
-                l = list(datetimestring)
-                l[4] = '-'
-                l[7] = '-'
-                datetimestring=''.join(l)
+    def search_at_flickr(self,photo):
+        exiftool.executable ='exiftool'
+        #convert vales from exiftool to webservice format
+        with exiftool.ExifTool() as et:
+            metadata = et.get_metadata(photo)
+            datetimestring = self.get_photo_timestamp(metadata)
+            l = list(datetimestring)
+            l[4] = '-'
+            l[7] = '-'
+            datetimestring=''.join(l)
 
-                dt = dateparser.parse(datetimestring)
+            dt = dateparser.parse(datetimestring)
 
-                timestamp = int(time.mktime(dt.timetuple()))
-                timestamp = dt.strftime('%Y-%m-%d %H:%M:%S')
+            timestamp = int(time.mktime(dt.timetuple()))
+            timestamp = dt.strftime('%Y-%m-%d %H:%M:%S')
         
-                flickr_instance = flickr()
-                flickr_state = flickr_instance.search_flickr(timestamp)
-                return flickr_state
-                #print str(photo).ljust(50),str(flickr_state).ljust(3)
+            flickr_instance = flickr()
+            result = flickr_instance.search_flickr(timestamp)
+        return result   
+        
+    def search_at_mapillary(self,photo):
+        exiftool.executable ='exiftool'
+        #convert vales from exiftool to webservice format
+        with exiftool.ExifTool() as et:
+            metadata = et.get_metadata(photo)
+            datetimestring = self.get_photo_timestamp(metadata)
+            l = list(datetimestring)
+            l[4] = '-'
+            l[7] = '-'
+            datetimestring=''.join(l)
+
+            dt = dateparser.parse(datetimestring)
+
+            timestamp = int(time.mktime(dt.timetuple()))
+            timestamp = dt.strftime('%Y-%m-%dT%H:%M:%S')
+        
+            mapillry_instance = mapillary()
+            result = mapillry_instance.search_mapillary(timestamp)
+        return result
+
         
         
 if __name__ == "__main__":        
