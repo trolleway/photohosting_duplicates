@@ -55,7 +55,8 @@ class PhotohostingsModel:
             result=dict()
             result['filepath'] = str(photo)
             result['mapillary_ready'] = self.ready_for_mapillary(photo)
-            result['flickr'] = self.search_at_flickr(photo)
+            result['flickr'] = 0
+            #result['flickr'] = self.search_at_flickr(photo)
             result['mapillary'] = self.search_at_mapillary(photo)
             
             
@@ -126,7 +127,7 @@ class PhotohostingsModel:
         shutil.rmtree(folder, ignore_errors=True)
         os.makedirs(folder)
         for photo in photos_data:
-            if photo['mapillary_ready'] == True:
+            if photo['mapillary_ready'] == True and photo['mapillary'] ==0:
                 print photo['filepath']
                 shutil.copy(photo['filepath'],folder)
 
