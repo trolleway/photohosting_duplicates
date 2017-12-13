@@ -24,6 +24,8 @@ import dateutil.parser as dateparser
           
 class PhotohostingsModel:  
 
+    exiftool_path = 'exiftool'
+
     def _get_if_exist(self, data, key):
         if key in data:
             return data[key]
@@ -46,14 +48,20 @@ class PhotohostingsModel:
                     cnt+1    
         self.search_at_flickr(photos)
                     
-    def cycle_files(self,photos):
-        print 'FILENAME'.ljust(30),str('flickr').ljust(10),str('mapillary').ljust(10)
+    def scan_files(self,photos):
+        photos_data = list()
+        print 'FILENAME'.ljust(40),str('flickr').ljust(10),str('mapillary').ljust(10)
         for photo in photos:
             result=dict()
+            result['filepath'] = str(photo)
+            result['mapillary_ready'] = self.ready_for_mapillary(photo)
             result['flickr'] = self.search_at_flickr(photo)
             result['mapillary'] = self.search_at_mapillary(photo)
             
-            print os.path.basename(str(photo)).ljust(30),str(result['flickr']).ljust(10),str(result['mapillary']).ljust(10)
+            
+            print os.path.basename(str(photo)).ljust(40),str(result['flickr']).ljust(10),str(result['mapillary']).ljust(10),str(result['mapillary_ready']).ljust(6)
+            photos_data.append(result)
+        return photos_data
     
     def search_at_flickr(self,photo):
         exiftool.executable ='exiftool'
@@ -76,7 +84,7 @@ class PhotohostingsModel:
         return result   
         
     def search_at_mapillary(self,photo):
-        exiftool.executable ='exiftool'
+        exiftool.executable = self.exiftool_path
         #convert vales from exiftool to webservice format
         with exiftool.ExifTool() as et:
             metadata = et.get_metadata(photo)
@@ -94,6 +102,33 @@ class PhotohostingsModel:
             mapillry_instance = mapillary()
             result = mapillry_instance.search_mapillary(timestamp)
         return result
+    
+    def ready_for_mapillary(self,photo):
+        #check if photo has lat, lon and direction tags
+        exiftool.executable = self.exiftool_path
+        #convert vales from exiftool to webservice format
+        #import json
+        with exiftool.ExifTool() as et:
+            metadata = et.get_metadata(photo)
+            #print(json.dumps(metadata, indent = 4))
+
+            direction = self._get_if_exist(metadata, "EXIF:GPSImgDirection")
+            if direction is None:
+                return False
+            lat = self._get_if_exist(metadata, "EXIF:GPSLatitude")
+            if lat is None:
+                return False
+            return True
+    
+    def copy_for_mapillary(self,photos_data):
+        folder='C:/temp/mapillary/'
+        import shutil
+        shutil.rmtree(folder, ignore_errors=True)
+        os.makedirs(folder)
+        for photo in photos_data:
+            if photo['mapillary_ready'] == True:
+                print photo['filepath']
+                shutil.copy(photo['filepath'],folder)
 
         
         
@@ -114,7 +149,17 @@ if __name__ == "__main__":
      
 model = PhotohostingsModel()
 
-model.cycle_files(files)
+photos_data = model.scan_files(files)
 
-raw_input('press any key')
-quit()
+command = None
+while command not in (0,1):
+    dir1 = os.path.dirname(os.path.realpath(__file__))
+    command = raw_input('Enter 0 for quit, 1 for copy files for mapillary ')
+    try: 
+        command = int(command)
+    except ValueError:
+        command = None
+    if command == 0:
+        quit()
+    elif command == 1:
+        model.copy_for_mapillary(photos_data)
