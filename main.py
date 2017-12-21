@@ -25,6 +25,7 @@ import dateutil.parser as dateparser
 class PhotohostingsModel:  
 
     exiftool_path = 'exiftool'
+    mapillary_skip_words = ['crop','ShiftN']
 
     def _get_if_exist(self, data, key):
         if key in data:
@@ -50,11 +51,12 @@ class PhotohostingsModel:
                     
     def scan_files(self,photos):
         photos_data = list()
+        mapillary_skip_words = self.mapillary_skip_words
         print 'FILENAME'.ljust(40),str('flickr').ljust(10),str('mapillary').ljust(10)
         for photo in photos:
             result=dict()
             result['filepath'] = str(photo)
-            result['mapillary_ready'] = self.ready_for_mapillary(photo)
+            result['mapillary_ready'] = self.ready_for_mapillary(photo,mapillary_skip_words)
             result['flickr'] = 0
             #result['flickr'] = self.search_at_flickr(photo)
             result['mapillary'] = self.search_at_mapillary(photo)
@@ -104,7 +106,7 @@ class PhotohostingsModel:
             result = mapillry_instance.search_mapillary(timestamp)
         return result
     
-    def ready_for_mapillary(self,photo):
+    def ready_for_mapillary(self,photo,skip_words=None):
         #check if photo has lat, lon and direction tags
         exiftool.executable = self.exiftool_path
         #convert vales from exiftool to webservice format
@@ -119,6 +121,10 @@ class PhotohostingsModel:
             lat = self._get_if_exist(metadata, "EXIF:GPSLatitude")
             if lat is None:
                 return False
+            if skip_words is not None:
+                for word in skip_words:
+                    if word in os.path.basename(str(photo)):
+                        return False
             return True
     
     def copy_for_mapillary(self,photos_data):
@@ -128,6 +134,7 @@ class PhotohostingsModel:
         os.makedirs(folder)
         for photo in photos_data:
             if photo['mapillary_ready'] == True and photo['mapillary'] ==0:
+
                 print photo['filepath']
                 shutil.copy(photo['filepath'],folder)
 
