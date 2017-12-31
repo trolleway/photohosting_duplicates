@@ -130,8 +130,12 @@ class PhotohostingsModel:
     def copy_for_mapillary(self,photos_data):
         folder='C:/temp/mapillary/'
         import shutil
-        shutil.rmtree(folder, ignore_errors=True)
-        os.makedirs(folder)
+        try:
+            shutil.rmtree(folder, ignore_errors=True)
+            os.makedirs(folder)
+        except: #second time
+            shutil.rmtree(folder, ignore_errors=True)
+            os.makedirs(folder)            
         for photo in photos_data:
             if photo['mapillary_ready'] == True and photo['mapillary'] ==0:
 
@@ -170,4 +174,15 @@ while command not in (0,1):
     if command == 0:
         quit()
     elif command == 1:
-        model.copy_for_mapillary(photos_data)
+        #run and not close at Win after error
+        try:
+            model.copy_for_mapillary(photos_data)
+        except:
+            import sys
+            print sys.exc_info()[0]
+            import traceback
+            print traceback.format_exc()
+            print "Press Enter to continue ..." 
+            raw_input() 
+        
+        
